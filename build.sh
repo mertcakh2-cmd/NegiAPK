@@ -1,27 +1,41 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-echo "================================"
-echo "       VIMMY INSTALLER"
-echo "================================"
+echo "=================================="
+echo "       NEGI VIMMY BUILDER"
+echo "=================================="
 
-pkg update -y
-pkg install clang ncurses -y
+if [ -n "${PREFIX:-}" ]; then
+    pkg update -y
+    pkg install clang ncurses -y
+fi
 
-echo "[+] Compiling Vimmy..."
+echo "[1/3] Checking source files..."
 
-clang -std=c11 -D_DEFAULT_SOURCE \
--Wall -Wextra -O2 \
-editor.c -lncurses -o vimmy
+for file in editor.c decor.c; do
+    if [ ! -f "$file" ]; then
+        echo "ERROR: Missing $file"
+        exit 1
+    fi
+done
 
-echo "[+] Installing..."
+echo "[2/3] Compiling Vimmy..."
 
-mkdir -p "$PREFIX/bin"
-cp vimmy "$PREFIX/bin/vimmy"
-chmod +x "$PREFIX/bin/vimmy"
+clang \
+    -std=c11 \
+    -D_DEFAULT_SOURCE \
+    -Wall -Wextra \
+    -O2 \
+    editor.c decor.c \
+    -lncurses \
+    -o vimmy
 
-echo ""
-echo "Vimmy installed successfully!"
-echo "Run: vimmy"
-echo "Open file: vimmy filename.txt"
+echo "[3/3] Build complete!"
+
+if [ -n "${PREFIX:-}" ]; then
+    install -Dm755 vimmy "$PREFIX/bin/vimmy"
+    echo "Installed to Termux!"
+fi
+
+echo "Run: ./vimmy"
